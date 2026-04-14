@@ -5,6 +5,213 @@
 
 ---
 
+## Materi: Konsep CI/CD & Jenkins
+
+### Apa itu CI/CD?
+
+**CI/CD** adalah praktik pengembangan perangkat lunak modern yang mengotomasi proses integrasi kode, pengujian, dan deployment.
+
+| Singkatan | Kepanjangan | Pengertian |
+|-----------|-------------|------------|
+| **CI** | Continuous Integration | Praktik menggabungkan (merge) perubahan kode ke repository utama secara sering dan otomatis menjalankan build + test setiap ada perubahan |
+| **CD** | Continuous Delivery | Mengekstensikan CI dengan memastikan kode selalu siap di-deploy ke environment production kapan saja |
+| **CD** | Continuous Deployment | Selangkah lebih jauh — setiap perubahan yang lolos test langsung di-deploy ke production secara otomatis |
+
+```
+Tanpa CI/CD (Manual):             Dengan CI/CD (Otomatis):
+                                  
+Developer → (manual build)        Developer → git push
+         → (manual test)                   → [otomatis] build
+         → (manual upload)                 → [otomatis] test
+         → (manual deploy)                 → [otomatis] deploy
+         ≈ berjam-jam, error-prone         ≈ menit, konsisten
+```
+
+---
+
+### Apa itu Jenkins?
+
+**Jenkins** adalah server otomasi open-source berbasis Java yang paling banyak digunakan untuk implementasi CI/CD. Jenkins berfungsi sebagai **orchestrator** — ia mengawasi repository, memicu build, menjalankan test, dan mendistribusikan aplikasi ke server.
+
+#### Sejarah Singkat
+- Awalnya bernama **Hudson**, dibuat oleh Kohsuke Kawaguchi di Sun Microsystems (2004)
+- Berganti nama menjadi **Jenkins** pada 2011 setelah konflik dengan Oracle
+- Saat ini dikelola oleh **Jenkins community** (open-source), diunduh >1 juta kali/bulan
+
+#### Mengapa Jenkins?
+- **Open-source & gratis** — tidak ada biaya lisensi
+- **Plugin ekosistem luas** — lebih dari 1.800 plugin (Git, Docker, Kubernetes, Slack, dll.)
+- **Fleksibel** — mendukung berbagai bahasa, tools, dan platform
+- **Pipeline as Code** — pipeline didefinisikan dalam file `Jenkinsfile` yang disimpan di Git
+- **Distributed builds** — mendukung arsitektur master-agent untuk build paralel
+
+---
+
+### Komponen Utama Jenkins
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  Jenkins Server                     │
+│                                                     │
+│  ┌─────────────┐   ┌──────────────┐                │
+│  │   Job /     │   │   Pipeline   │                │
+│  │   Project   │   │  (Jenkinsfile│                │
+│  └─────────────┘   └──────────────┘                │
+│                                                     │
+│  ┌─────────────┐   ┌──────────────┐                │
+│  │  Credentials│   │   Plugins    │                │
+│  │  (SSH, token│   │  (Git, Docker│                │
+│  │   password) │   │   SSH Agent) │                │
+│  └─────────────┘   └──────────────┘                │
+│                                                     │
+│  ┌─────────────────────────────────┐               │
+│  │         Build History           │               │
+│  │  #1 ✓  #2 ✓  #3 ✗  #4 ✓       │               │
+│  └─────────────────────────────────┘               │
+└─────────────────────────────────────────────────────┘
+```
+
+| Komponen | Fungsi |
+|----------|--------|
+| **Job / Project** | Unit kerja di Jenkins. Berisi konfigurasi apa yang harus dijalankan |
+| **Pipeline** | Rangkaian stage yang membentuk alur CI/CD, didefinisikan via Jenkinsfile |
+| **Stage** | Satu langkah besar dalam pipeline (misal: Build, Test, Deploy) |
+| **Step** | Perintah spesifik di dalam sebuah stage |
+| **Build** | Satu eksekusi pipeline (Build #1, #2, dst.) |
+| **Workspace** | Direktori di Jenkins server tempat kode di-checkout & di-build |
+| **Credentials** | Penyimpanan aman untuk password, SSH key, API token |
+| **Agent** | Mesin yang menjalankan pipeline (`agent any` = pakai server Jenkins itu sendiri) |
+| **Executor** | Slot eksekusi; satu executor menjalankan satu build pada satu waktu |
+| **Plugin** | Ekstensi untuk menambah kemampuan Jenkins |
+
+---
+
+### Jenkinsfile: Pipeline as Code
+
+**Jenkinsfile** adalah file teks (groovy DSL) yang mendefinisikan seluruh alur CI/CD. Disimpan di dalam repository, memungkinkan pipeline di-version control bersama kode aplikasi.
+
+**Dua syntax Pipeline:**
+
+```groovy
+// 1. Declarative Pipeline (direkomendasikan, lebih terstruktur)
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                sh 'docker build -t myapp .'
+            }
+        }
+    }
+}
+
+// 2. Scripted Pipeline (lebih fleksibel, syntax Groovy penuh)
+node {
+    stage('Build') {
+        sh 'docker build -t myapp .'
+    }
+}
+```
+
+> Lab ini menggunakan **Declarative Pipeline**.
+
+---
+
+### Jenis-Jenis Job di Jenkins
+
+| Jenis | Keterangan | Kapan Digunakan |
+|-------|------------|-----------------|
+| **Freestyle Project** | Job klasik, konfigurasi via UI | Tugas sederhana, tidak butuh pipeline kompleks |
+| **Pipeline** | Job berbasis Jenkinsfile | CI/CD modern, direkomendasikan |
+| **Multibranch Pipeline** | Otomatis membuat pipeline per branch | Proyek dengan banyak branch (GitFlow) |
+| **Folder** | Mengelompokkan job | Organisasi proyek besar |
+| **GitHub Organization** | Scan semua repo dalam org GitHub | Enterprise / organisasi besar |
+
+> Lab ini menggunakan job **Pipeline**.
+
+---
+
+### Build Triggers (Cara Memicu Pipeline)
+
+```
+1. Manual          → Klik "Build Now" di Jenkins UI
+                     
+2. Poll SCM        → Jenkins aktif memeriksa Git secara berkala
+   (H/5 * * * *)     (setiap 5 menit, cek ada commit baru?)
+                     
+3. Webhook         → GitHub/GitLab push → kirim HTTP POST ke Jenkins
+   (paling cepat)    Jenkins langsung bereaksi dalam hitungan detik
+                     
+4. Trigger dari    → Pipeline lain memanggil pipeline ini
+   pipeline lain     (pipeline chain / upstream-downstream)
+                     
+5. Jadwal          → Seperti cron job, build pada waktu tertentu
+   (H 2 * * 1-5)     (misalnya: setiap hari kerja jam 02.00)
+```
+
+---
+
+### Credentials Management
+
+Jenkins menyediakan **Credentials Store** yang aman untuk menyimpan informasi sensitif. Credential **tidak pernah** ditampilkan plain-text di log.
+
+| Tipe Credential | Contoh Penggunaan |
+|-----------------|-------------------|
+| `Username with password` | Login Docker Hub, akun Git private |
+| `SSH Username with private key` | Deploy ke server via SSH |
+| `Secret text` | API token, webhook secret |
+| `Certificate` | Client certificate untuk koneksi aman |
+
+Dalam Jenkinsfile, credential dipanggil dengan:
+```groovy
+// Menggunakan SSH key
+sshagent(credentials: ['deploy-ssh-key']) {
+    sh 'ssh deploy@10.34.100.178 "docker ps"'
+}
+
+// Menggunakan username/password
+withCredentials([usernamePassword(
+    credentialsId: 'dockerhub-credentials',
+    usernameVariable: 'USER',
+    passwordVariable: 'PASS'
+)]) {
+    sh 'docker login -u $USER -p $PASS'
+}
+```
+
+---
+
+### Post Actions & Notifikasi
+
+Blok `post` dijalankan setelah semua stage selesai, tergantung kondisi hasil build:
+
+```groovy
+post {
+    always   { ... }  // Selalu dijalankan (cleanup, archive)
+    success  { ... }  // Hanya jika pipeline SUKSES
+    failure  { ... }  // Hanya jika pipeline GAGAL
+    unstable { ... }  // Jika ada test yang gagal tapi build sukses
+    changed  { ... }  // Jika status berubah dari build sebelumnya
+}
+```
+
+---
+
+### Perbandingan Jenkins vs Tools CI/CD Lain
+
+| Fitur | Jenkins | GitHub Actions | GitLab CI | CircleCI |
+|-------|---------|----------------|-----------|----------|
+| Open-source | ✓ | ✗ (proprietary) | ✓ (partial) | ✗ |
+| Self-hosted | ✓ | ✓ (runner) | ✓ | ✓ (runner) |
+| Cloud-hosted | ✗ (perlu setup) | ✓ | ✓ | ✓ |
+| Plugin ekosistem | ✓✓✓ (1800+) | ✓✓ (marketplace) | ✓ | ✓ |
+| Kurva belajar | Sedang | Rendah | Rendah | Rendah |
+| Cocok untuk | On-premise, enterprise | Open-source, GitHub | GitLab user | Tim kecil-menengah |
+
+> Jenkins unggul untuk **on-premise deployment** dan lingkungan yang membutuhkan kontrol penuh atas infrastruktur — cocok untuk skenario DevSecOps di production environment sendiri.
+
+---
+
 ## Deskripsi Lab
 
 Pada lab ini, kamu akan membangun pipeline CI/CD menggunakan **Jenkins** untuk men-deploy aplikasi web berbasis container ke beberapa server secara otomatis.
