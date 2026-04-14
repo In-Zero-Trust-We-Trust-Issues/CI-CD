@@ -18,7 +18,7 @@ sudo hostnamectl set-hostname jenkins-server
 # Edit /etc/hosts agar semua VM bisa berkomunikasi via nama host
 sudo tee -a /etc/hosts <<EOF
 
-10.34.100.200  jenkins-server
+10.34.100.189  jenkins-server
 10.34.100.178  app-server-1
 10.34.100.179  app-server-2
 10.34.100.180  app-server-3
