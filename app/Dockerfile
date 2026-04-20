@@ -22,7 +22,7 @@ COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/pytho
 COPY --from=builder /usr/local/bin/gunicorn /usr/local/bin/gunicorn
 
 # Copy source code aplikasi
-COPY --chown=appuser:appuser app/. .
+COPY --chown=appuser:appuser app/ .
 
 # Jalankan sebagai user non-root
 USER appuser
