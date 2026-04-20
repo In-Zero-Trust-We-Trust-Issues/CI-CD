@@ -4,10 +4,11 @@ FROM python:3.12-slim AS builder
 WORKDIR /app
 
 # Install dependencies terlebih dahulu (layer caching)
-COPY app/requirements.txt .
+COPY requirements.txt .
+COPY tests/requirements-test.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir -r tests/requirements-test.txt
+    pip install --no-cache-dir -r requirements-test.txt
 
 # Stage 2: Runtime image yang lebih kecil
 FROM python:3.12-slim
