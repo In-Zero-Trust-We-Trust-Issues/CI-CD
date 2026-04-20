@@ -22,6 +22,12 @@ pipeline {
                 checkout scm
             }
         }
+        stage('Debug') {
+            steps {
+                sh 'pwd'
+                sh 'ls -R'
+            }
+        }
 
         stage('Build') {
             steps {
