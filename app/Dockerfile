@@ -5,7 +5,6 @@ WORKDIR /app
 
 # Install dependencies terlebih dahulu (layer caching)
 COPY requirements.txt .
-COPY tests/requirements-test.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -r tests/requirements-test.txt
