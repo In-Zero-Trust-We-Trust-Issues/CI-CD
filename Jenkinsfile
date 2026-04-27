@@ -11,10 +11,9 @@ pipeline {
         CONTAINER_NAME = "${JOB_BASE_NAME}-app"
         APP_PORT       = "8082"
 
-        // Tambah ini — sesuaikan dengan VM deploy kamu
-        DEPLOY_USER    = "kelompok2"           // user SSH di VM deploy
-        DEPLOY_HOST    = "10.34.100.179"      // IP VM deploy
-        SSH_KEY_ID     = "deploy-ssh-kelompok2"    // ID credential SSH di Jenkins
+        DEPLOY_USER    = "kelompok2"
+        DEPLOY_HOST    = "10.34.100.179"
+        SSH_KEY_ID     = "deploy-ssh-kelompok2"
     }
     stages {
         stage('Clone') {
@@ -35,11 +34,12 @@ pipeline {
         }
         stage('Test') {
             steps {
-                sh "docker run --rm ${IMAGE_NAME}:${IMAGE_TAG} python -m pytest /app/tests/ -v"
+                // HaloTamu adalah project frontend (React/Vite)
+                // Jalankan build check sebagai bentuk validasi
+                echo "Frontend project — skipping backend test"
+                sh "docker run --rm ${IMAGE_NAME}:${IMAGE_TAG} nginx -t"
             }
         }
-
-        // Tambah stage: kirim image ke VM deploy via docker save + scp
         stage('Transfer Image') {
             steps {
                 sshagent(credentials: [SSH_KEY_ID]) {
@@ -51,8 +51,6 @@ pipeline {
                 }
             }
         }
-
-        //  Deploy sekarang jalan di VM deploy via SSH
         stage('Deploy') {
             steps {
                 sshagent(credentials: [SSH_KEY_ID]) {
@@ -62,24 +60,20 @@ pipeline {
                             docker rm   ${CONTAINER_NAME} || true
                             docker run -d \
                                 --name ${CONTAINER_NAME} \
-                                -p ${APP_PORT}:5000 \
+                                -p ${APP_PORT}:80 \
                                 ${IMAGE_NAME}:${IMAGE_TAG}
                         '
                     """
                 }
             }
         }
-
-        // Cleanup image lama — di kedua server
         stage('Cleanup') {
             steps {
                 script {
                     def prevTag = BUILD_NUMBER.toInteger() - 1
 
-                    // Hapus image lama di Jenkins server
                     sh "docker rmi ${IMAGE_NAME}:${prevTag} || true"
 
-                    // Hapus image lama di VM deploy juga
                     sshagent(credentials: [SSH_KEY_ID]) {
                         sh """
                             ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \
@@ -95,9 +89,15 @@ pipeline {
             echo " Deploy ${JOB_NAME} build #${BUILD_NUMBER} berhasil! Akses di port ${APP_PORT}"
         }
         failure {
-            echo "Build ${JOB_NAME} #${BUILD_NUMBER} gagal. Periksa log di atas."
-            sh "docker stop ${CONTAINER_NAME} || true"
-            sh "docker rm   ${CONTAINER_NAME} || true"
+            echo " Build ${JOB_NAME} #${BUILD_NUMBER} gagal. Periksa log di atas."
+            sshagent(credentials: [SSH_KEY_ID]) {
+                sh """
+                    ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
+                        docker stop ${CONTAINER_NAME} || true
+                        docker rm   ${CONTAINER_NAME} || true
+                    '
+                """
+            }
         }
     }
 }
