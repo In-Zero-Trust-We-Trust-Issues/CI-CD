@@ -14,7 +14,7 @@ pipeline {
         // Tambah ini — sesuaikan dengan VM deploy kamu
         DEPLOY_USER    = "kelompok2"           // user SSH di VM deploy
         DEPLOY_HOST    = "10.34.100.179"      // IP VM deploy
-        SSH_KEY_ID     = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC6pG9C7fpRSVQwpnxTLVJSK1UptJ/GEzgJERo05F2nLCecpjwDN9H279jJchgZoRyYQrHdmCCYC83pK5Mk7xzw6msZW1ch0uvRAaUPu9XuC/xIv9qKoGZxdyKysnWEAL/JYCWAa6iCp7EEGmBI4jZk3NT5gsxjJ+Vowtl3UtzYb2e9mCgEdHsumtKS06PIkAaRQiAO3aFAlWXj7aiYitcRh0AEc9obu/T7H75b6Gkt18Dndonxev0u9qa7szSLcwfJy4Mvu1xM3kcUfE3AS0D5Ljl0bMO22B+9ocsMa4B6hUBlQ/VkpSn0y8V5F4lQ3STo2ZowfshVC1PFYGRvr1WgjINDfRkX/Zhg7Y1su4Y3pxTHHyPkXFT38WrfUWdayhXndY/Se6/Se2PdsJYkcZRIfnFczru7faoCokUVpOuJIizCDc5h1SnlfgQYc4u9kWyt6az9O/tjYgeTNwdTocSVSOjlyOS71YlEVSGpeEv3T9KbwCp4mecTpbdsxjEod9A42Mwz2Q89k+mZCo7X8KwurII+vqjoaGDlL0GvOOIg/VMRADcZ7yo0W8AACHCTP4VrF1xppDsVPFZAev66RVMu9GX0V79VmH2g7x126pgBIeo1R9vW8X8IMl+i1K7r40fJ354Ga07A7upNBTnTdSo6xtwIMhWCEUWwzHbsAJv+ZQ== jenkins-kelompok2"    // ID credential SSH di Jenkins
+        SSH_KEY_ID     = "deploy-ssh-kelompok2"    // ID credential SSH di Jenkins
     }
     stages {
         stage('Clone') {
