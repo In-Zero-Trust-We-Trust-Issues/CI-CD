@@ -48,7 +48,7 @@ const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 ">
         <div>
-          <h1 className="mt-6 text-center text-4xl font-bold text-gray-900 dark:text-gray-100">Halo Tamu Test</h1>
+          <h1 className="mt-6 text-center text-4xl font-bold text-gray-900 dark:text-gray-100">Halo Tamu</h1>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Sebuah Sistem yang berguna sebagai Buku Tamu & Pengunjung Digital
           </p>
