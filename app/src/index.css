@@ -1,0 +1,239 @@
+@import "tailwindcss";
+
+/* Explicit dark mode rules to ensure they work */
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+}
+
+/* Force background changes */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.light body {
+  background-color: white !important;
+  color: #374151 !important;
+}
+
+html.dark body {
+  background-color: #111827 !important;
+  color: #f3f4f6 !important;
+}
+
+/* Light mode overrides */
+.light .bg-gray-50 { background-color: #f9fafb !important; }
+.light .bg-gray-100 { background-color: #f3f4f6 !important; }
+.light .bg-gray-200 { background-color: #e5e7eb !important; }
+.light .bg-gray-300 { background-color: #d1d5db !important; }
+.light .bg-gray-800 { background-color: #f9fafb !important; }
+.light .bg-gray-900 { background-color: white !important; }
+.light .bg-gray-950 { background-color: white !important; }
+
+.light .text-white { color: #111827 !important; }
+.light .text-gray-100 { color: #374151 !important; }
+.light .text-gray-200 { color: #4b5563 !important; }
+.light .text-gray-300 { color: #6b7280 !important; }
+.light .text-gray-400 { color: #9ca3af !important; }
+.light .text-gray-500 { color: #6b7280 !important; }
+.light .text-gray-600 { color: #4b5563 !important; }
+.light .text-gray-700 { color: #374151 !important; }
+.light .text-gray-800 { color: #1f2937 !important; }
+.light .text-gray-900 { color: #111827 !important; }
+
+.light .border-gray-600 { border-color: #d1d5db !important; }
+.light .border-gray-700 { border-color: #e5e7eb !important; }
+
+/* Light mode form inputs */
+.light input[type="text"],
+.light input[type="password"],
+.light input {
+  background-color: white !important;
+  color: #111827 !important;
+  border-color: #d1d5db !important;
+}
+
+.light input::placeholder {
+  color: #9ca3af !important;
+}
+
+.light input:focus {
+  border-color: #3b82f6 !important;
+  background-color: white !important;
+  color: #111827 !important;
+}
+
+/* Light mode buttons */
+.light button {
+  color: white !important;
+}
+
+.light .bg-blue-600 {
+  background-color: #2563eb !important;
+  color: white !important;
+}
+
+.light .bg-blue-500 {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.light .hover\:bg-blue-700:hover {
+  background-color: #1d4ed8 !important;
+}
+
+.light .hover\:bg-blue-600:hover {
+  background-color: #2563eb !important;
+}
+
+/* Light mode headings and titles */
+.light h1,
+.light h2,
+.light h3,
+.light h4,
+.light h5,
+.light h6 {
+  color: #111827 !important;
+}
+
+/* Light mode specific background overrides */
+.light .bg-white { background-color: white !important; }
+.light .bg-gray-700 { background-color: #f3f4f6 !important; }
+
+/* Ensure dark mode classes work */
+.dark .bg-white { background-color: #1f2937 !important; }
+.dark .bg-gray-50 { background-color: #111827 !important; }
+.dark .bg-gray-100 { background-color: #374151 !important; }
+.dark .bg-gray-200 { background-color: #4b5563 !important; }
+.dark .bg-gray-300 { background-color: #6b7280 !important; }
+.dark .bg-gray-800 { background-color: #1f2937 !important; }
+.dark .bg-gray-900 { background-color: #111827 !important; }
+
+/* Dark mode form inputs */
+.dark input[type="text"],
+.dark input[type="password"],
+.dark input {
+  background-color: #374151 !important;
+  color: #f3f4f6 !important;
+  border-color: #4b5563 !important;
+}
+
+.dark input::placeholder {
+  color: #9ca3af !important;
+}
+
+.dark input:focus {
+  border-color: #3b82f6 !important;
+  background-color: #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+/* Dark mode buttons */
+.dark .bg-blue-600 {
+  background-color: #1e40af !important;
+  color: white !important;
+}
+
+.dark .bg-blue-500 {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.dark .hover\:bg-blue-700:hover {
+  background-color: #1e3a8a !important;
+}
+
+.dark .hover\:bg-blue-600:hover {
+  background-color: #1e40af !important;
+}
+
+.dark .text-gray-900 { color: #f3f4f6 !important; }
+.dark .text-gray-800 { color: #f9fafb !important; }
+.dark .text-gray-700 { color: #e5e7eb !important; }
+.dark .text-gray-600 { color: #d1d5db !important; }
+.dark .text-gray-500 { color: #9ca3af !important; }
+.dark .text-gray-400 { color: #6b7280 !important; }
+.dark .text-gray-300 { color: #d1d5db !important; }
+.dark .text-gray-200 { color: #e5e7eb !important; }
+.dark .text-gray-100 { color: #f3f4f6 !important; }
+
+.dark .border-gray-300 { border-color: #4b5563 !important; }
+.dark .border-gray-600 { border-color: #4b5563 !important; }
+.dark .border-gray-700 { border-color: #374151 !important; }
+
+/* Light mode navbar and components */
+.light nav {
+  background-color: white !important;
+  border-color: #e5e7eb !important;
+}
+
+.light .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Light mode dropdowns and modals */
+.light .bg-gray-800 { background-color: white !important; }
+.light .ring-black { 
+  --tw-ring-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Light mode test boxes */
+.light .bg-red-100 { background-color: #fef2f2 !important; }
+.light .bg-red-900 { background-color: #fef2f2 !important; }
+.light .bg-green-100 { background-color: #f0fdf4 !important; }
+.light .bg-green-900 { background-color: #f0fdf4 !important; }
+.light .bg-blue-100 { background-color: #eff6ff !important; }
+.light .bg-blue-900 { background-color: #eff6ff !important; }
+
+.light .bg-red-300 { background-color: #fca5a5 !important; }
+.light .bg-red-600 { background-color: #fca5a5 !important; }
+.light .bg-green-300 { background-color: #86efac !important; }
+.light .bg-green-600 { background-color: #86efac !important; }
+.light .bg-blue-300 { background-color: #93c5fd !important; }
+.light .bg-blue-600 { background-color: #93c5fd !important; }
+
+.light .text-red-600 { color: #dc2626 !important; }
+.light .text-red-400 { color: #dc2626 !important; }
+.light .text-green-600 { color: #16a34a !important; }
+.light .text-green-400 { color: #16a34a !important; }
+.light .text-blue-600 { color: #2563eb !important; }
+.light .text-blue-400 { color: #2563eb !important; }
+
+/* Dark mode navbar and components */
+.dark nav {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+}
+
+.dark .shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Dark mode dropdowns and modals */
+.dark .ring-black { 
+  --tw-ring-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Dark mode test boxes */
+.dark .bg-red-100 { background-color: #7f1d1d !important; }
+.dark .bg-red-900 { background-color: #7f1d1d !important; }
+.dark .bg-green-100 { background-color: #14532d !important; }
+.dark .bg-green-900 { background-color: #14532d !important; }
+.dark .bg-blue-100 { background-color: #1e3a8a !important; }
+.dark .bg-blue-900 { background-color: #1e3a8a !important; }
+
+.dark .bg-red-300 { background-color: #dc2626 !important; }
+.dark .bg-red-600 { background-color: #dc2626 !important; }
+.dark .bg-green-300 { background-color: #16a34a !important; }
+.dark .bg-green-600 { background-color: #16a34a !important; }
+.dark .bg-blue-300 { background-color: #2563eb !important; }
+
+.dark .text-red-600 { color: #f87171 !important; }
+.dark .text-red-400 { color: #f87171 !important; }
+.dark .text-green-600 { color: #4ade80 !important; }
+.dark .text-green-400 { color: #4ade80 !important; }
+.dark .text-blue-600 { color: #60a5fa !important; }
+.dark .text-blue-400 { color: #60a5fa !important; }
