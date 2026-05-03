@@ -1,69 +1,45 @@
+import { supabase } from "../lib/supabase";
+
 export interface User { 
     username: string;
     fullName: string;
+    email?: string; 
 }
 
-export const AUTH_STORAGE_KEY = "halo-tamu-auth"; 
-export const USER_PROFILE_KEY = "halo-tamu-user-profile"; 
+export const islogin = async (email: string, password: string): Promise<boolean> => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
 
-const VALID_CREDENTIALS= { 
-    username: "Admin",
-    password: "SelamatDatang123"
+  if (error || !data.user) return false
+  return true
 }
 
-export const getCurrentUser = (): User | null => { 
-    if (typeof window === "undefined") return null
+export const isAuthenticated = async (): Promise<boolean> => { 
+    const {data} = await supabase.auth.getSession();
+    return !!data.session;
+}
 
-    const userStr = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!userStr) return null;
+export const getCurrentUser = async (): Promise<User | null> => {
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) return null;
 
-    try{ 
-        return JSON.parse(userStr);
-    } catch {
-        return null;
+    return { 
+        username: data.user.email || "", 
+        fullName: data.user.user_metadata.full_name || "",
+        email: data.user.email || undefined,    
     }
 }
 
-export const getUserProfile = () => { 
-    if(typeof window !=="undefined") return null
-
-
-    const profileStr = localStorage.getItem(USER_PROFILE_KEY);
-    if(!profileStr) return {fullName: "Admin"}
+export const updateUserProfile = async (fullname: string): Promise<void> => { 
+    await supabase.auth.updateUser({ 
+        data: { 
+            full_name: fullname 
+        } 
+    });
 }
 
-
-export const UpdateUserProfile = (fullName: string): void => {
-    const profile = {fullName}; 
-    localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
-
-
-    const currentUser = getCurrentUser(); 
-    if(currentUser){ 
-        currentUser.fullName = fullName;
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(currentUser));
-    }
-
+export const logout = async (): Promise<void> => { 
+    await supabase.auth.signOut();
 }
-
-export const isAuthenticated = (): boolean => {
-    return getCurrentUser() !== null;
-}
-
-
-export const islogin = (username:string, password:string): boolean => {
-    if(username === VALID_CREDENTIALS.username && password === VALID_CREDENTIALS.password){ 
-        const user: User = { 
-            username,
-            fullName: getUserProfile()?.fullName || "Admin"
-        }
-        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
-        return true;
-    }
-    return false;
-}
-
-export const logout = ():void => { 
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-}
-

@@ -1,3 +1,5 @@
+import { supabase } from "../lib/supabase"
+
 export interface Guest {
   id: string
   name: string
@@ -7,68 +9,88 @@ export interface Guest {
   createdAt: string
 }
 
-const GUESTS_STORAGE_KEY = "aksa-hr-guests"
+const mapGuestData = (row: any): Guest => ({
+  id: row.id,
+  name: row.name,
+  company: row.company,
+  purpose: row.purpose,
+  arrivalTime: row.arrival_time,
+  createdAt: row.created_at,
+})
 
-export const getGuests = (): Guest[] => {
-  if (typeof window === "undefined") return []
+export const getGuests = async (): Promise<Guest[]> => {
+  const {data, error } = await supabase.from('guests').select('*').order('created_at', { ascending: false })
 
-  const guestsStr = localStorage.getItem(GUESTS_STORAGE_KEY)
-  if (!guestsStr) return []
-
-  try {
-    return JSON.parse(guestsStr)
-  } catch {
+  if (error) {
+    console.error('Error fetching guests:', error)
     return []
   }
+  
+  return data.map(mapGuestData)
 }
 
-export const saveGuests = (guests: Guest[]): void => {
-  localStorage.setItem(GUESTS_STORAGE_KEY, JSON.stringify(guests))
-}
+export const addGuest = async (guestData: Omit<Guest, 'id' | 'createdAt'>): Promise<Guest | null> => {
+  const {data: UserData} = await supabase.auth.getUser()
+  if(!UserData.user){ 
+    return null
+  }
+  const { data, error } = await supabase.from('guests').insert({
+    name: guestData.name,
+    company: guestData.company,
+    purpose: guestData.purpose,
+    arrival_time: guestData.arrivalTime,
+    user_id: UserData.user.id, 
+  })
+  .select()
+  .single()
 
-export const addGuest = (guestData: Omit<Guest, "id" | "createdAt">): Guest => {
-  const guests = getGuests()
-  const newGuest: Guest = {
-    ...guestData,
-    id: Date.now().toString(),
-    createdAt: new Date().toISOString(),
+  if (error) {
+    console.error('Error adding guest:', error)
+    return null
   }
 
-  guests.unshift(newGuest)
-  saveGuests(guests)
-  return newGuest
+  return mapGuestData(data)
 }
 
-export const updateGuest = (id: string, guestData: Partial<Guest>): boolean => {
-  const guests = getGuests()
-  const index = guests.findIndex((guest) => guest.id === id)
+export const updateGuest = async (id: string, guestData: Partial<Guest>): Promise<boolean> => { 
+  const {error } = await supabase.from('guests').update({
+    name: guestData.name,
+    company: guestData.company,
+    purpose: guestData.purpose,
+    arrival_time: guestData.arrivalTime,
+  }).eq('id', id)
 
-  if (index === -1) return false
-
-  guests[index] = { ...guests[index], ...guestData }
-  saveGuests(guests)
+  if (error) {
+    console.error('Error updating guest:', error)
+    return false
+  }
+  
   return true
 }
 
-export const deleteGuest = (id: string): boolean => {
-  const guests = getGuests()
-  const filteredGuests = guests.filter((guest) => guest.id !== id)
+export const deleteGuest = async (id: string): Promise<boolean> => { 
+  const {error} = await supabase
+  .from('guests')
+  .delete()
+  .eq('id', id)
 
-  if (filteredGuests.length === guests.length) return false
-
-  saveGuests(filteredGuests)
+  if (error) {
+    console.error('Error deleting guest:', error)
+    return false
+  }
   return true
 }
 
-export const searchGuests = (keyword: string): Guest[] => {
-  const guests = getGuests()
-  if (!keyword.trim()) return guests
-
-  const searchTerm = keyword.toLowerCase()
-  return guests.filter(
-    (guest) =>
-      guest.name.toLowerCase().includes(searchTerm) ||
-      guest.company.toLowerCase().includes(searchTerm) ||
-      guest.purpose.toLowerCase().includes(searchTerm),
-  )
+export const searchGuest = async (keyword: string): Promise<Guest[]> => { 
+  const {data, error} = await supabase
+  .from('guests')
+  .select('*')
+  .or(`name.ilike.%${keyword}%,company.ilike.%${keyword}%,purpose.ilike.%${keyword}%`)
+  .order('created_at', { ascending: false })
+  
+  if (error) {
+    console.error('Error searching guests:', error)
+    return []
+  }
+  return data.map(mapGuestData)
 }

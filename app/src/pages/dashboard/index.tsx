@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { isAuthenticated } from "../../utils/auth"
-import { getGuests, addGuest, updateGuest, deleteGuest, searchGuests, type Guest } from "../../utils/gueststorage"
+import { getGuests, addGuest, updateGuest, deleteGuest, searchGuest, type Guest } from "../../utils/gueststorage"
 import Navbar from "../../components/navbar"
 import SearchFilter from "../../components/seacrh/searchfilter"
 import GuestCard from "../../components/card/guestcard"
@@ -23,12 +23,15 @@ export default function Dashboard() {
   const location = useLocation()
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/")
-      return
+    const init = async () => { 
+      const auth = await isAuthenticated()
+      if(!auth){ 
+        navigate("/")
+        return
+      }
+      await loadGuests()
     }
-
-    loadGuests()
+    init()
   }, [navigate])
 
   useEffect(() => {
@@ -46,16 +49,16 @@ export default function Dashboard() {
     setPaginatedGuests(filteredGuests.slice(startIndex, endIndex))
   }, [filteredGuests, currentPage])
 
-  const loadGuests = () => {
-    const allGuests = getGuests()
+  const loadGuests = async () => {
+    const allGuests = await getGuests()
     setGuests(allGuests)
     setFilteredGuests(allGuests)
   }
 
   const handleSearch = useCallback(
-    (keyword: string) => {
+    async (keyword: string) => {
       if (keyword.trim()) {
-        const results = searchGuests(keyword)
+        const results = await searchGuest(keyword)
         setFilteredGuests(results)
       } else {
         setFilteredGuests(guests)
@@ -75,21 +78,21 @@ export default function Dashboard() {
     setIsModalOpen(true)
   }
 
-  const handleSaveGuest = (guestData: Omit<Guest, "id" | "createdAt">) => {
+  const handleSaveGuest = async (guestData: Omit<Guest, "id" | "createdAt">) => {
     if (editingGuest) {
-      updateGuest(editingGuest.id, guestData)
+      await updateGuest(editingGuest.id, guestData)
     } else {
-      addGuest(guestData)
+      await addGuest(guestData)
     }
-    loadGuests()
+    await loadGuests()
     setIsModalOpen(false)
     setEditingGuest(null)
   }
 
-  const handleDeleteGuest = (id: string) => {
+  const handleDeleteGuest = async (id: string) => {
     if (window.confirm("Apakah Anda yakin ingin menghapus data tamu ini?")) {
-      deleteGuest(id)
-      loadGuests()
+      await deleteGuest(id)
+      await loadGuests()
     }
   }
 

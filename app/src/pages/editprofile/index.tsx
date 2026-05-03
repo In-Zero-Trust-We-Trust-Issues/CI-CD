@@ -2,7 +2,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { isAuthenticated, getCurrentUser, UpdateUserProfile } from "../../utils/auth"
+import { isAuthenticated, getCurrentUser, updateUserProfile } from "../../utils/auth"
 import Navbar from "../../components/navbar"
 
 export default function ProfilePage() {
@@ -10,17 +10,25 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState("")
   const navigate = useNavigate()
+  const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/")
-      return
+    const init = async () => {
+      const authed = await isAuthenticated()  // async
+      if (!authed) {
+        navigate("/")
+        return
+      }
+
+      const user = await getCurrentUser()  // async
+      if (user) {
+        setFullName(user.fullName || user.email || "")
+      }
+
+      setIsChecking(false)
     }
 
-    const user = getCurrentUser()
-    if (user) {
-      setFullName(user.fullName)
-    }
+    init()
   }, [navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +37,7 @@ export default function ProfilePage() {
     setMessage("")
 
     try {
-      UpdateUserProfile(fullName)
+      await updateUserProfile(fullName)
       setMessage("Profile berhasil diperbarui!")
       window.dispatchEvent(new Event("storage"))
       setTimeout(() => {
@@ -42,8 +50,12 @@ export default function ProfilePage() {
     }
   }
 
-  if (!isAuthenticated()) {
-    return null
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <p className="text-gray-500 dark:text-gray-400">Memuat...</p>
+      </div>
+    )
   }
 
   return (
@@ -59,7 +71,7 @@ export default function ProfilePage() {
             <form onSubmit={handleSubmit} className="mt-5">
               <div className="w-full">
                 <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Nama Lengkap
+                  Email
                 </label>
                 <div className="mt-1">
                   <input
