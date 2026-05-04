@@ -10,7 +10,6 @@ pipeline {
         IMAGE_PREV_TAG = "${BUILD_NUMBER.toInteger() - 1}"
         CONTAINER_NAME = "${JOB_BASE_NAME}-app"
         APP_PORT       = "8082"
-
         DEPLOY_USER    = "kelompok2"
         DEPLOY_HOST    = "10.34.100.179"
         SSH_KEY_ID     = "deploy-ssh-kelompok2"
@@ -27,6 +26,19 @@ pipeline {
                 sh 'ls -R'
             }
         }
+
+        stage('Transfer Env') {
+            steps {
+                sshagent(credentials: [SSH_KEY_ID]) {
+                    sh """
+                        scp -o StrictHostKeyChecking=no \
+                            ${DEPLOY_USER}@${DEPLOY_HOST}:~/halotamu/.env \
+                            ./app/.env
+                    """
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ./app"
@@ -34,8 +46,6 @@ pipeline {
         }
         stage('Test') {
             steps {
-                // HaloTamu adalah project frontend (React/Vite)
-                // Jalankan build check sebagai bentuk validasi
                 echo "Frontend project — skipping backend test"
                 sh "docker run --rm ${IMAGE_NAME}:${IMAGE_TAG} nginx -t"
             }
@@ -71,9 +81,7 @@ pipeline {
             steps {
                 script {
                     def prevTag = BUILD_NUMBER.toInteger() - 1
-
                     sh "docker rmi ${IMAGE_NAME}:${prevTag} || true"
-
                     sshagent(credentials: [SSH_KEY_ID]) {
                         sh """
                             ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} \
@@ -86,10 +94,10 @@ pipeline {
     }
     post {
         success {
-            echo " Deploy ${JOB_NAME} build #${BUILD_NUMBER} berhasil! Akses di port ${APP_PORT}"
+            echo "Deploy ${JOB_NAME} build #${BUILD_NUMBER} berhasil! Akses di port ${APP_PORT}"
         }
         failure {
-            echo " Build ${JOB_NAME} #${BUILD_NUMBER} gagal. Periksa log di atas."
+            echo "Build ${JOB_NAME} #${BUILD_NUMBER} gagal. Periksa log di atas."
             sshagent(credentials: [SSH_KEY_ID]) {
                 sh """
                     ssh -o StrictHostKeyChecking=no ${DEPLOY_USER}@${DEPLOY_HOST} '
