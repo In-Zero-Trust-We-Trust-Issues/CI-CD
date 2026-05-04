@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import type { Guest } from "../../utils/gueststorage"
 
@@ -19,6 +18,7 @@ export default function GuestModal({ isOpen, onClose, onSave, guest }: GuestModa
     purpose: "",
     arrivalTime: "",
   })
+  const [isSaving, setIsSaving] = useState(false) 
 
   useEffect(() => {
     if (guest) {
@@ -38,10 +38,17 @@ export default function GuestModal({ isOpen, onClose, onSave, guest }: GuestModa
     }
   }, [guest, isOpen])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onSave(formData)
-    onClose()
+    setIsSaving(true)
+    try {
+      await onSave(formData)
+      onClose()
+    } catch (err) {
+      console.error("Gagal menyimpan tamu:", err)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -122,15 +129,17 @@ export default function GuestModal({ isOpen, onClose, onSave, guest }: GuestModa
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              disabled={isSaving}
+              className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors"
+              disabled={isSaving}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {guest ? "Update" : "Simpan"}
+              {isSaving ? "Menyimpan..." : guest ? "Update" : "Simpan"} 
             </button>
           </div>
         </form>
