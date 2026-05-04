@@ -19,13 +19,19 @@ const mapGuestData = (row: any): Guest => ({
 })
 
 export const getGuests = async (): Promise<Guest[]> => {
-  const {data, error } = await supabase.from('guests').select('*').order('created_at', { ascending: false })
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return []
+
+  const { data, error } = await supabase
+    .from('guests')
+    .select('*')
+    .eq('user_id', userData.user.id)  // ← filter by user
+    .order('created_at', { ascending: false })
 
   if (error) {
     console.error('Error fetching guests:', error)
     return []
   }
-  
   return data.map(mapGuestData)
 }
 
@@ -82,12 +88,16 @@ export const deleteGuest = async (id: string): Promise<boolean> => {
 }
 
 export const searchGuest = async (keyword: string): Promise<Guest[]> => { 
-  const {data, error} = await supabase
-  .from('guests')
-  .select('*')
-  .or(`name.ilike.%${keyword}%,company.ilike.%${keyword}%,purpose.ilike.%${keyword}%`)
-  .order('created_at', { ascending: false })
-  
+  const { data: userData } = await supabase.auth.getUser()
+  if (!userData.user) return []
+
+  const { data, error } = await supabase
+    .from('guests')
+    .select('*')
+    .eq('user_id', userData.user.id)  // ← filter by user
+    .or(`name.ilike.%${keyword}%,company.ilike.%${keyword}%,purpose.ilike.%${keyword}%`)
+    .order('created_at', { ascending: false })
+
   if (error) {
     console.error('Error searching guests:', error)
     return []
