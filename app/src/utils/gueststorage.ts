@@ -94,7 +94,7 @@ export const searchGuest = async (keyword: string): Promise<Guest[]> => {
   const { data, error } = await supabase
     .from('guests')
     .select('*')
-    .eq('user_id', userData.user.id)  // ← filter by user
+    .eq('user_id', userData.user.id)
     .or(`name.ilike.%${keyword}%,company.ilike.%${keyword}%,purpose.ilike.%${keyword}%`)
     .order('created_at', { ascending: false })
 

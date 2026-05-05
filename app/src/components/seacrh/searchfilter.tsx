@@ -14,23 +14,23 @@ export default function SearchFilter({ onSearch }: SearchFilterProps) {
     return searchParams.get("keyword") || ""
   })
 
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search)
-    const currentKeyword = searchParams.get("keyword") || ""
-    setKeyword(currentKeyword)
-    onSearch(currentKeyword)
-  }, [location.search]) // ← hapus onSearch dari dependency (ini penyebab infinite re-render)
+useEffect(() => {
+  const searchParams = new URLSearchParams(location.search)
+  const currentKeyword = searchParams.get("keyword") || ""
+  setKeyword(currentKeyword)
+  onSearch(currentKeyword)
+}, [location.search, onSearch])
 
-  const handleSearch = () => {
-    const params = new URLSearchParams(location.search)
-    if (keyword.trim()) {
-      params.set("keyword", keyword.trim())
-    } else {
-      params.delete("keyword")
-    }
-    params.delete("page")
-    navigate(`${location.pathname}?${params.toString()}`)
+ const handleSearch = () => {
+  const params = new URLSearchParams(location.search)
+  if (keyword.trim()) {
+    params.set("keyword", keyword.trim())
+  } else {
+    params.delete("keyword")
   }
+  params.set("page", "1") 
+  navigate(`${location.pathname}?${params.toString()}`)
+}
 
   const handleClear = () => {
     setKeyword("")

@@ -63,10 +63,8 @@ export default function Dashboard() {
       } else {
         setFilteredGuests(guests)
       }
-      setCurrentPage(1)
     },
-    [guests],
-  )
+    [guests])
 
   const handleAddGuest = () => {
     setEditingGuest(null)
@@ -121,9 +119,9 @@ export default function Dashboard() {
     document.body.removeChild(link)
   }
 
-  if (!isAuthenticated()) {
-    return null
-  }
+  // if (!isAuthenticated()) {
+  //   return null
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
