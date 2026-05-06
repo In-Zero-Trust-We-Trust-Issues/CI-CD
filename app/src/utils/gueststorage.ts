@@ -21,8 +21,8 @@ const mapGuestData = (row: any): Guest => ({
   createdAt: row.created_at,
   ktpUrl: row.ktp_url ?? null,
 })
+const urlCache: Record<string, { url: string; expiresAt: number }> = {}
 
-// ✅ Upload PDF helper — return path atau null
 async function uploadPdf(file: File): Promise<string | null> {
   const fileName = `${Date.now()}_${file.name}`
   const { data, error } = await supabase.storage
@@ -41,7 +41,6 @@ export const getGuests = async (): Promise<Guest[]> => {
   return data.map(mapGuestData)
 }
 
-// ✅ addGuest terima File opsional
 export const addGuest = async (
   guestData: Omit<Guest, "id" | "createdAt">,
   pdfFile?: File | null
@@ -65,7 +64,6 @@ export const addGuest = async (
   return mapGuestData(data)
 }
 
-// ✅ updateGuest terima File opsional — upload PDF baru jika ada
 export const updateGuest = async (
   id: string,
   guestData: Partial<Guest>,
@@ -73,7 +71,6 @@ export const updateGuest = async (
 ): Promise<boolean> => {
   let ktp_url = guestData.ktpUrl ?? null
 
-  // Jika ada file PDF baru, upload dulu
   if (newPdfFile) ktp_url = await uploadPdf(newPdfFile)
 
   const { error } = await supabase
@@ -83,7 +80,7 @@ export const updateGuest = async (
       company: guestData.company,
       purpose: guestData.purpose,
       arrival_time: guestData.arrivalTime,
-      ktp_url,  // ✅ update dengan path baru atau tetap path lama
+      ktp_url,
     })
     .eq("id", id)
 
@@ -108,11 +105,26 @@ export const searchGuest = async (keyword: string): Promise<Guest[]> => {
   return data.map(mapGuestData)
 }
 
-// ✅ Generate signed URL — hanya admin yang bisa akses
 export const getSignedUrl = async (path: string): Promise<string | null> => {
+  const now = Date.now()
+  const cached = urlCache[path]
+
+  if (cached && cached.expiresAt - now > 30_000) {
+    return cached.url
+  }
+
+  const EXPIRY_SECONDS = 300 // 5 menit
   const { data, error } = await supabase.storage
     .from(BUCKET)
-    .createSignedUrl(path, 60)
+    .createSignedUrl(path, EXPIRY_SECONDS)
+
   if (error) { console.error(error); return null }
+
+  // Simpan ke cache
+  urlCache[path] = {
+    url: data.signedUrl,
+    expiresAt: now + EXPIRY_SECONDS * 1000,
+  }
+
   return data.signedUrl
 }
