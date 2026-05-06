@@ -21,21 +21,32 @@ export default function GuestCard({ guest, onEdit, onDelete }: GuestCardProps) {
   const handleViewPdf = async () => {
     if (!guest.ktpUrl) return
 
-    const url = await getSignedUrl(guest.ktpUrl)
-    if (!url) {
-      alert("Gagal membuka dokumen")
+    // HARUS buka window SEBELUM await
+    const newTab = window.open("", "_blank")
+    if (!newTab) {
+      alert("Popup diblokir browser. Izinkan popup untuk situs ini.")
       return
     }
 
-    // Anchor click lebih reliable dari window.open() setelah await
-    // karena tidak tergantung popup-blocker browser
-    const a = document.createElement("a")
-    a.href = url
-    a.target = "_blank"
-    a.rel = "noopener noreferrer"
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+    // Tulis loading page agar tab tidak blank saat menunggu
+    newTab.document.write(`
+      <html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f9f9f9">
+        <p style="color:#555;font-size:16px">⏳ Memuat dokumen...</p>
+      </body></html>
+    `)
+
+    const url = await getSignedUrl(guest.ktpUrl)
+
+    if (url) {
+      // replace() tidak tambah history entry, lebih bersih dari .href
+      newTab.location.replace(url)
+    } else {
+      newTab.document.write(`
+        <html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+          <p style="color:red;font-size:16px">❌ Gagal memuat dokumen. Silakan coba lagi.</p>
+        </body></html>
+      `)
+    }
   }
 
   return (
