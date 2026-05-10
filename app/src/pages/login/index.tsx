@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 
 const LoginPage = () => {
@@ -7,23 +8,14 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { user, profile, loading: authLoading } = useAuth();
 
 useEffect(() => {
-  const checkAuth = async () => {
-    const { data } = await supabase.auth.getSession()
-    if (!data.session || !data.session.user) return
+  if (authLoading) return;
+  if (!user || !profile) return;
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.session.user.id)
-      .single()
-
-    navigate(profile?.role === "admin" ? "/dashboard" : "/")
-  }
-
-  checkAuth()
-}, [navigate])
+  navigate(profile.role === "admin" ? "/dashboard" : "/");
+}, [authLoading, user, profile, navigate])
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault()
@@ -41,14 +33,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       return
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .single()
-
-    // Admin ke dashboard, selain itu ke homepage
-    navigate(profile?.role === "admin" ? "/dashboard" : "/")
+    // Tunggu AuthContext memuat profile lalu redirect di useEffect
 
   } catch {
     setError("Terjadi kesalahan, silakan coba lagi")
