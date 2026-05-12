@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode} from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
-import type { Session, User } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 
 interface Profile {
   id: string
@@ -15,6 +15,7 @@ interface AuthContextType {
   loading: boolean
   profileLoading: boolean
   signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,16 +24,21 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   profileLoading: false,
   signOut: async () => {},
+  refreshProfile: async () => {},
 })
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true)      // hanya untuk init pertama
   const [profileLoading, setProfileLoading] = useState(false)
-  const lastProfileUserIdRef = useRef<string | null>(null)
+  const fetchingRef = useRef(false)
+  const lastUserIdRef = useRef<string | null>(null)
 
-  async function fetchProfile(userId: string) {
+  const fetchProfile = async (userId: string) => {
+    // Cegah duplicate fetch
+    if (fetchingRef.current) return
+    fetchingRef.current = true
     setProfileLoading(true)
     try {
       const { data, error } = await supabase
@@ -40,56 +46,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('id, email, full_name, role')
         .eq('id', userId)
         .single()
-
-      if (error || !data) {
-        setProfile(null)
-        return
-      }
-
-      setProfile(data as Profile)
+      if (!error && data) setProfile(data as Profile)
     } finally {
+      fetchingRef.current = false
       setProfileLoading(false)
     }
   }
 
-  const syncSession = async (session: Session | null) => {
-    const nextUser = session?.user ?? null
-    setUser(nextUser)
-
-    if (!nextUser) {
-      lastProfileUserIdRef.current = null
-      setProfile(null)
-      setProfileLoading(false)
-      return
-    }
-
-    if (lastProfileUserIdRef.current !== nextUser.id) {
-      lastProfileUserIdRef.current = nextUser.id
-      setProfile(null)
-    }
-
-    await fetchProfile(nextUser.id)
+  const refreshProfile = async () => {
+    if (lastUserIdRef.current) await fetchProfile(lastUserIdRef.current)
   }
 
   useEffect(() => {
     let isMounted = true
 
-    const init = async () => {
-      setLoading(true)
-      const { data: { session } } = await supabase.auth.getSession()
+    // Init: ambil session sekali saja
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!isMounted) return
-      await syncSession(session)
-      if (isMounted) setLoading(false)
-    }
-
-    init()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (!isMounted) return
-        await syncSession(session)
+      const currentUser = session?.user ?? null
+      setUser(currentUser)
+      lastUserIdRef.current = currentUser?.id ?? null
+      if (currentUser) {
+        fetchProfile(currentUser.id).finally(() => {
+          if (isMounted) setLoading(false)
+        })
+      } else {
+        setLoading(false)
       }
-    )
+    })
+
+    // Listen perubahan auth — hanya proses event yang relevan
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return
+
+      // Abaikan event yang tidak perlu re-fetch
+      if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') return
+
+      const nextUser = session?.user ?? null
+      setUser(nextUser)
+
+      if (!nextUser) {
+        lastUserIdRef.current = null
+        setProfile(null)
+        return
+      }
+
+      // Hanya fetch ulang kalau user berbeda (login user baru)
+      if (lastUserIdRef.current !== nextUser.id) {
+        lastUserIdRef.current = nextUser.id
+        setProfile(null)
+        fetchProfile(nextUser.id)
+      }
+    })
 
     return () => {
       isMounted = false
@@ -97,24 +105,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-const signOut = async () => {
-  await supabase.auth.signOut()
-  setUser(null)
-  setProfile(null)
-  window.location.href = "/"
-}
+  const signOut = async () => {
+    await supabase.auth.signOut()
+    setUser(null)
+    setProfile(null)
+    lastUserIdRef.current = null
+    window.location.href = '/'
+  }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, profileLoading, signOut }}>
-    {/* Jangan render children sampai loading selesai */}
-    {loading ? (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+    <AuthContext.Provider value={{ user, profile, loading, profileLoading, signOut, refreshProfile }}>
+      {/* 
+        KUNCI PERBAIKAN: Jangan unmount children saat loading.
+        Gunakan visibility/opacity agar HMR tidak destroy component tree.
+      */}
+      <div style={{ visibility: loading ? 'hidden' : 'visible' }}>
+        {children}
       </div>
-    ) : (
-      children
-    )}
-  </AuthContext.Provider>
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-900 z-50">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+        </div>
+      )}
+    </AuthContext.Provider>
   )
 }
 
